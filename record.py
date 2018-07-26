@@ -4,7 +4,8 @@ from subprocess import Popen, PIPE, check_output
 from time import sleep
 import sys
 
-def run(cmd, env=None):
+def run(cmd, display):
+    env = {"DISPLAY": display}
     return check_output(cmd, env=env, stderr=sys.stderr, encoding="utf-8")
 
 def fonts(name="fonf", size=16):
@@ -33,9 +34,8 @@ def normalize_line(line):
     return list(parts)
 
 def urxvt_dimensions(display, pid):
-    env = {"DISPLAY": display}
-    win_id = run(["xdotool", "search", "--pid", str(pid)], env=env).strip()
-    lines = run(["xwininfo", "-id", win_id], env=env).splitlines()
+    winid = run(["xdotool", "search", "--pid", str(pid)], display).strip()
+    lines = run(["xwininfo", "-id", winid], display).splitlines()
     lines = filter(lambda line: ":" in line, lines)
     lines = map(lambda line: normalize_line(line), lines)
     stats = dict(lines)
