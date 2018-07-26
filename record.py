@@ -8,13 +8,11 @@ def fonts(name="fonf", size=16):
             "xft:{}:bold:pixelsize={}".format(name, size))
 
 def xephyr_run(display):
-    # Set the dimensions to something that should (hopefully) be more than
-    # urxvt needs.
-    dimensions = "1000x1000"
+    # Use dimensions that are (hopefully) larger than urxvt will need.
+    dimensions = "1400x1000"
     return Popen(["Xephyr", "-screen", dimensions, "-resizeable", display])
 
-def ffmpeg_run(display, dimensions_tuple, duration, output="output.mp4"):
-    dimensions = "x".join(dimensions_tuple)
+def ffmpeg_run(display, dimensions, duration, output="output.mp4"):
     return Popen(["ffmpeg", "-video_size", dimensions, "-framerate", "10",
                     "-f", "x11grab", "-t", duration, "-i", display, output],
                  stderr=PIPE)
@@ -32,7 +30,9 @@ def urxvt_dimensions(display):
     lines = map(str.strip, lines)
     lines = filter(lambda line: ": " in line, lines)
     stats = dict(map(lambda line: line.split(": ", 1), lines))
-    return (stats["Width"], stats["Height"])
+    width = stats["Width"]
+    height = stats["Height"]
+    return "x".join([width, height])
 
 script = "/home/pup/demo-script/replay.sh"
 script = "/usr/bin/nvim"
@@ -44,10 +44,10 @@ xephyr = xephyr_run(display)
 sleep(1)
 
 urxvt  = urxvt_run(display, script)
-width, height = urxvt_dimensions(display)
 sleep(1)
+dimensions = urxvt_dimensions(display)
 
-ffmpeg = ffmpeg_run(display, (width, height), duration)
+ffmpeg = ffmpeg_run(display, dimensions, duration)
 
 
 ffmpeg.communicate()
