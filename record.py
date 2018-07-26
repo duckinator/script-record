@@ -35,7 +35,7 @@ def normalize_line(line):
 def urxvt_dimensions(display, pid):
     env = {"DISPLAY": display}
     win_id = run(["xdotool", "search", "--pid", str(pid)], env=env).strip()
-    lines = run(["xwininfo", "-display", display, "-id", win_id]).splitlines()
+    lines = run(["xwininfo", "-id", win_id], env=env).splitlines()
     lines = filter(lambda line: ":" in line, lines)
     lines = map(lambda line: normalize_line(line), lines)
     stats = dict(lines)
