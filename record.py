@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from subprocess import Popen, PIPE, check_output
+from subprocess import Popen, check_output
 from time import sleep
 import sys
 
@@ -12,15 +12,15 @@ def fonts(name="fonf", size=16):
     return ("xft:{}:pixelsize={}".format(name, size),
             "xft:{}:bold:pixelsize={}".format(name, size))
 
-def xephyr_start(display):
+def xephyr_start(display=":1"):
     # Use dimensions that are (hopefully) larger than urxvt will need.
     dimensions = "1400x1000"
-    return Popen(["Xephyr", "-screen", dimensions, "-resizeable", display])
+    xephyr = Popen(["Xephyr", "-screen", dimensions, "-resizeable", display])
+    return (xephyr, display)
 
-def ffmpeg_start(display, dimensions, duration, output="output.mp4"):
+def ffmpeg_start(display, dimensions, output="output.mp4"):
     return Popen(["ffmpeg", "-video_size", dimensions, "-framerate", "10",
-                    "-f", "x11grab", "-t", duration, "-i", display, output],
-                 stderr=PIPE)
+                    "-f", "x11grab", "-i", display, output])
 
 def urxvt_start(display, script):
     font_norm, font_bold = fonts()
@@ -48,26 +48,24 @@ def urxvt_dimensions(display, pid):
 script = "/home/pup/demo-script/replay.sh"
 script = "/usr/bin/nvim"
 
-display = ":1"
-duration = "10"
-
-xephyr = xephyr_start(display)
+xephyr, display = xephyr_start()
 sleep(1)
 
 urxvt  = urxvt_start(display, script)
 sleep(1)
 dimensions = urxvt_dimensions(display, urxvt.pid)
 
-ffmpeg = ffmpeg_start(display, dimensions, duration)
+ffmpeg = ffmpeg_start(display, dimensions)
 
-# Wait for urxvt to finish.
-urxvt.communicate()
+# Wait for the script to finish.
+# URxvt will automatically close when the script is done.
+urxvt.wait()
 
-# The script is done -- tell ffmpeg to quit.
+# Ask ffmpeg to close, since the replay is done.
 ffmpeg.terminate()
 
-# Wait for ffmpeg to finish.
-ffmpeg.communicate()
+# Wait for ffmpeg to close.
+ffmpeg.wait()
 
-# Close Xephyr.
+# Ask Xephyr to close.
 xephyr.terminate()
