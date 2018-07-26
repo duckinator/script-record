@@ -34,7 +34,6 @@ def urxvt_dimensions(display):
     stats = dict(map(lambda line: line.split(": ", 1), lines))
     width = stats["Width"]
     height = stats["Height"]
-    print("urxvt dimensions = {}x{}".format(width, height))
     return "x".join([width, height])
 
 script = "/home/pup/demo-script/replay.sh"
