@@ -4,8 +4,8 @@ from subprocess import Popen, PIPE, check_output
 from time import sleep
 import sys
 
-def run(cmd):
-    return check_output(cmd, stderr=sys.stderr, encoding="utf-8")
+def run(cmd, env=None):
+    return check_output(cmd, env=env, stderr=sys.stderr, encoding="utf-8")
 
 def fonts(name="fonf", size=16):
     return ("xft:{}:pixelsize={}".format(name, size),
@@ -26,15 +26,20 @@ def urxvt_run(display, script):
     return Popen(["urxvt", "-display", display, "-fn", font_norm,
                     "-fb", font_bold, "-e", script])
 
-def urxvt_dimensions(display):
-    stdout = run(["xwininfo", "-display", display, "-root", "-children",
-                    "-stats"])
-    lines = map(str.strip, stdout.splitlines())
-    lines = filter(lambda line: ": " in line, lines)
-    stats = dict(map(lambda line: line.split(": ", 1), lines))
-    width = stats["Width"]
-    height = stats["Height"]
-    return "x".join([width, height])
+def normalize_line(line):
+    parts = line.split(":", 1)
+    parts = map(str.strip, parts)
+    parts = map(str.lower, parts)
+    return list(parts)
+
+def urxvt_dimensions(display, pid):
+    env = {"DISPLAY": display}
+    win_id = run(["xdotool", "search", "--pid", str(pid)], env=env).strip()
+    lines = run(["xwininfo", "-display", display, "-id", win_id]).splitlines()
+    lines = map(lambda line: normalize_line(line), lines)
+    lines = filter(lambda line: len(line) == 2, lines)
+    stats = dict(lines)
+    return "x".join([stats["width"], stats["height"]])
 
 script = "/home/pup/demo-script/replay.sh"
 script = "/usr/bin/nvim"
@@ -47,11 +52,10 @@ sleep(1)
 
 urxvt  = urxvt_run(display, script)
 sleep(1)
-dimensions = urxvt_dimensions(display)
+dimensions = urxvt_dimensions(display, urxvt.pid)
 
 ffmpeg = ffmpeg_run(display, dimensions, duration)
 
-
-ffmpeg.communicate()
 urxvt.communicate()
+ffmpeg.communicate()
 xephyr.kill()
