@@ -46,7 +46,6 @@ def urxvt_dimensions(display, pid):
     return "x".join([stats["width"], stats["height"]])
 
 script = "/home/pup/demo-script/replay.sh"
-script = "/usr/bin/nvim"
 
 xephyr, display = xephyr_start()
 sleep(1)
